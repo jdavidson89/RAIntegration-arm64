@@ -1,12 +1,13 @@
-#ifndef RA_CONTEXT_MOCKS_USERCONTEXT_HH
-#define RA_CONTEXT_MOCKS_USERCONTEXT_HH
+#ifndef RA_DATA_MOCK_USERCONTEXT_HH
+#define RA_DATA_MOCK_USERCONTEXT_HH
 #pragma once
 
-#include "context/UserContext.hh"
+#include "data\context\UserContext.hh"
 
-#include "services/ServiceLocator.hh"
+#include "services\ServiceLocator.hh"
 
 namespace ra {
+namespace data {
 namespace context {
 namespace mocks {
 
@@ -35,11 +36,12 @@ public:
 #pragma warning(pop)
 
 private:
-    ra::services::ServiceLocator::ServiceOverride<ra::context::UserContext> m_Override;
+    ra::services::ServiceLocator::ServiceOverride<ra::data::context::UserContext> m_Override;
 };
 
 } // namespace mocks
+} // namespace data
 } // namespace context
 } // namespace ra
 
-#endif // !RA_CONTEXT_MOCKS_USERCONTEXT_HH
+#endif // !RA_DATA_MOCK_USERCONTEXT_HH

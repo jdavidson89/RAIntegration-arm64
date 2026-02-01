@@ -16,11 +16,11 @@
 #include "context\IConsoleContext.hh"
 #include "context\IEmulatorMemoryContext.hh"
 #include "context\IRcClient.hh"
-#include "context\UserContext.hh"
 
 #include "data\context\EmulatorContext.hh"
 #include "data\context\GameContext.hh"
 #include "data\context\SessionTracker.hh"
+#include "data\context\UserContext.hh"
 
 #include "services\FrameEventQueue.hh"
 #include "services\GameIdentifier.hh"
@@ -1064,7 +1064,7 @@ void AchievementRuntime::LoginCallback(int nResult, const char* sErrorMessage, r
             }
             else
             {
-                auto& pUserContext = ra::services::ServiceLocator::GetMutable<ra::context::UserContext>();
+                auto& pUserContext = ra::services::ServiceLocator::GetMutable<ra::data::context::UserContext>();
                 pUserContext.Initialize(user->username, user->display_name, user->token);
                 pUserContext.SetScore(user->score);
 
@@ -1074,7 +1074,6 @@ void AchievementRuntime::LoginCallback(int nResult, const char* sErrorMessage, r
 
                 // notify the client to update the RetroAchievements menu
                 ra::services::ServiceLocator::Get<ra::data::context::EmulatorContext>().RebuildMenu();
-                RaiseClientExternalMenuChanged();
 
                 // update the client title-bar to include the user name
                 ra::services::ServiceLocator::GetMutable<ra::ui::viewmodels::WindowManager>().Emulator.UpdateWindowTitle();
@@ -1811,7 +1810,7 @@ static void ShowCompletionPopup(uint32_t nGameId, const std::wstring& sTitle, ui
     const bool bHardcore = pConfiguration.IsFeatureEnabled(ra::services::Feature::Hardcore);
 
     const auto& pGameContext = ra::services::ServiceLocator::Get<ra::data::context::GameContext>();
-    const auto& pUserContext = ra::services::ServiceLocator::Get<ra::context::UserContext>();
+    const auto& pUserContext = ra::services::ServiceLocator::Get<ra::data::context::UserContext>();
 
     const auto nPlayTimeSeconds =
         ra::services::ServiceLocator::Get<ra::data::context::SessionTracker>().GetTotalPlaytime(pGameContext.ActiveGameId());
@@ -1926,7 +1925,7 @@ static void ShowSimplifiedScoreboard(const rc_client_leaderboard_t& pLeaderboard
     auto vmScoreboard = std::make_unique<ra::ui::viewmodels::ScoreboardViewModel>();
     vmScoreboard->SetHeaderText(ra::Widen(pLeaderboard.title));
 
-    const auto& pUserName = ra::services::ServiceLocator::Get<ra::context::UserContext>().GetDisplayName();
+    const auto& pUserName = ra::services::ServiceLocator::Get<ra::data::context::UserContext>().GetDisplayName();
     auto& pEntryViewModel = vmScoreboard->Entries().Add();
     pEntryViewModel.SetRank(0);
     pEntryViewModel.SetScore(ra::Widen(pLeaderboard.tracker_value));
@@ -2072,7 +2071,7 @@ static void HandleLeaderboardScoreboardEvent(const rc_client_leaderboard_scorebo
     auto vmScoreboard = std::make_unique<ra::ui::viewmodels::ScoreboardViewModel>();
     vmScoreboard->SetHeaderText(ra::Widen(pLeaderboard.title));
 
-    const auto& pUserName = ra::services::ServiceLocator::Get<ra::context::UserContext>().GetDisplayName();
+    const auto& pUserName = ra::services::ServiceLocator::Get<ra::data::context::UserContext>().GetDisplayName();
     constexpr uint32_t nEntriesDisplayed = 7; // display is currently hard-coded to show 7 entries
     bool bSeenPlayer = false;
 
@@ -2411,7 +2410,7 @@ static void ProcessStateString(Tokenizer& pTokenizer, unsigned int nId, rc_trigg
 static bool LoadProgressV1(rc_client_t* pClient, const std::string& sProgress)
 {
     const auto& pGameContext = ra::services::ServiceLocator::Get<ra::data::context::GameContext>();
-    const auto& pUserContext = ra::services::ServiceLocator::Get<ra::context::UserContext>();
+    const auto& pUserContext = ra::services::ServiceLocator::Get<ra::data::context::UserContext>();
 
     Tokenizer pTokenizer(sProgress);
 
