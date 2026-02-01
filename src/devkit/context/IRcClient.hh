@@ -13,6 +13,7 @@ namespace context {
 class IRcClient
 {
 public:
+    IRcClient() noexcept = default;
     virtual ~IRcClient() noexcept;
     IRcClient(const IRcClient&) noexcept = delete;
     IRcClient& operator=(const IRcClient&) noexcept = delete;
@@ -38,8 +39,6 @@ public:
     virtual void DispatchRequest(const rc_api_request_t& pRequest, std::function<void(const rc_api_server_response_t&, void*)> fCallback, void* fCallbackData) const = 0;
 
 protected:
-    IRcClient() noexcept = default;
-
     std::unique_ptr<rc_client_t> m_pClient;
 };
 

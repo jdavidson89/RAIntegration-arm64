@@ -11,7 +11,6 @@
 #include "tests\mocks\MockDesktop.hh"
 #include "tests\mocks\MockEmulatorContext.hh"
 #include "tests\mocks\MockGameContext.hh"
-#include "tests\mocks\MockLoginService.hh"
 #include "tests\mocks\MockUserContext.hh"
 
 #include <rcheevos\src\rc_client_external.h>
@@ -49,7 +48,7 @@ public:
 
         auto* pClient = ra::services::ServiceLocator::Get<ra::context::IRcClient>().GetClient();
 
-        mockLoginService.Login("User", "ApiToken");
+        mockUserContext.Initialize("User", "ApiToken");
         pClient->user.display_name = "UserDisplay";
         pClient->state.user = RC_CLIENT_USER_STATE_LOGGED_IN;
     }
@@ -69,7 +68,6 @@ public:
     ra::data::context::mocks::MockEmulatorContext mockEmulatorContext;
     ra::data::context::mocks::MockUserContext mockUserContext;
     ra::services::mocks::MockConfiguration mockConfiguration;
-    ra::services::mocks::MockLoginService mockLoginService;
 
     rc_client_t* GetClient() const
     {
@@ -380,7 +378,7 @@ public:
     TEST_METHOD(TestRAIntegrationGetMenu)
     {
         AchievementRuntimeExportsHarness runtime;
-        runtime.mockLoginService.Logout();
+        runtime.mockUserContext.Logout();
         runtime.InitializeEventHandler();
 
         const rc_client_raintegration_menu_t* pMenu;
@@ -401,7 +399,7 @@ public:
         AssertMenuItem(pMenu, 11, IDM_RA_FILES_POINTERFINDER, "Pointer &Finder");
         AssertMenuItem(pMenu, 12, IDM_RA_FILES_POINTERINSPECTOR, "Pointer &Inspector");
 
-        runtime.mockLoginService.Login("User", "ApiToken");
+        runtime.mockUserContext.Initialize("User", "ApiToken");
         runtime.AssertMenuChangedEventSeen();
         runtime.ResetSeenEvents();
 

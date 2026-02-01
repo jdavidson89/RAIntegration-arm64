@@ -19,7 +19,6 @@
 #include "services\IConfiguration.hh"
 #include "services\IFileSystem.hh"
 #include "services\IHttpRequester.hh"
-#include "services\ILoginService.hh"
 
 #include "ui\IDesktop.hh"
 
@@ -288,19 +287,19 @@ bool EmulatorContext::ValidateClientVersion(bool& bHardcore)
         if (bHardcore)
         {
             sError = L"The latest client is required for hardcore mode.";
-            auto& pLoginContext = ra::services::ServiceLocator::GetMutable<ra::services::ILoginService>();
-            if (pLoginContext.IsLoggedIn())
+            auto& pUserContext = ra::services::ServiceLocator::GetMutable<ra::data::context::UserContext>();
+            if (pUserContext.IsLoggedIn())
             {
                 sError += L" You will be logged out.";
-                pLoginContext.Logout();
+                pUserContext.Logout();
             }
             else
             {
-                if (!pLoginContext.IsLoginDisabled() && !pConfiguration.GetApiToken().empty())
+                if (!pUserContext.IsLoginDisabled() && !pConfiguration.GetApiToken().empty())
                     sError += L" Login canceled.";
             }
 
-            pLoginContext.DisableLogin();
+            pUserContext.DisableLogin();
         }
 
         if (!m_sLatestVersionError.empty())
@@ -461,8 +460,8 @@ bool EmulatorContext::EnableHardcoreMode(bool bShowWarning)
     if (!ValidateClientVersion(bHardcore))
     {
         // The version could not be validated, or the user has chosen to update. Log them out.
-        auto& pLoginContext = ra::services::ServiceLocator::GetMutable<ra::services::ILoginService>();
-        pLoginContext.Logout();
+        auto& pUserContext = ra::services::ServiceLocator::GetMutable<ra::data::context::UserContext>();
+        pUserContext.Logout();
         return false;
     }
 

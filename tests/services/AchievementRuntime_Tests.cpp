@@ -18,7 +18,6 @@
 #include "tests\mocks\MockGameIdentifier.hh"
 #include "tests\mocks\MockImageRepository.hh"
 #include "tests\mocks\MockLocalStorage.hh"
-#include "tests\mocks\MockLoginService.hh"
 #include "tests\mocks\MockOverlayManager.hh"
 #include "tests\mocks\MockOverlayTheme.hh"
 #include "tests\mocks\MockSessionTracker.hh"
@@ -71,7 +70,6 @@ public:
     ra::services::mocks::MockConfiguration mockConfiguration;
     ra::services::mocks::MockFileSystem mockFileSystem;
     ra::services::mocks::MockFrameEventQueue mockFrameEventQueue;
-    ra::services::mocks::MockLoginService mockLoginService;
     ra::services::mocks::MockThreadPool mockThreadPool;
     ra::ui::drawing::mocks::MockSurfaceFactory mockSurfaceFactory;
     ra::ui::mocks::MockDesktop mockDesktop;
@@ -3677,7 +3675,7 @@ public:
     TEST_METHOD(TestServerCallOfflineAchievementSetsExists)
     {
         AchievementRuntimeHarness runtime;
-        runtime.mockLoginService.Logout();
+        runtime.mockUserContext.Logout();
         ra::services::mocks::MockLocalStorage mockLocalStorage;
         ra::services::mocks::MockGameIdentifier mockGameIdentifier;
         mockLocalStorage.MockStoredData(ra::services::StorageItemType::GameData, L"1234", "{\"Title\":\"GameName\",\"Sets\":[{\"a\":1}]}");
@@ -3713,7 +3711,7 @@ public:
     TEST_METHOD(TestServerCallOfflineAchievementSetsPatchExists)
     {
         AchievementRuntimeHarness runtime;
-        runtime.mockLoginService.Logout();
+        runtime.mockUserContext.Logout();
         ra::services::mocks::MockLocalStorage mockLocalStorage;
         ra::services::mocks::MockGameIdentifier mockGameIdentifier;
         // cached file exists, but is old format and should be ignored

@@ -19,7 +19,6 @@
 #include "services\impl\Clock.hh"
 #include "services\impl\FileLocalStorage.hh"
 #include "services\impl\JsonFileConfiguration.hh"
-#include "services\impl\LoginService.hh"
 #include "services\impl\MessageDispatcher.hh"
 #include "services\impl\ThreadPool.hh"
 #include "services\impl\WindowsAudioSystem.hh"
@@ -163,9 +162,6 @@ void Initialization::RegisterServices(EmulatorID nEmulatorId, const char* sClien
 
     auto pRcClient = std::make_unique<ra::context::impl::RcClient>();
     ra::services::ServiceLocator::Provide<ra::context::IRcClient>(std::move(pRcClient));
-
-    auto pLoginService = std::make_unique<ra::services::impl::LoginService>();
-    ra::services::ServiceLocator::Provide<ra::services::ILoginService>(std::move(pLoginService));
 
     auto pEmulatorMemoryContext = std::make_unique<ra::context::impl::EmulatorMemoryContext>();
     ra::services::ServiceLocator::Provide<ra::context::IEmulatorMemoryContext>(std::move(pEmulatorMemoryContext));
