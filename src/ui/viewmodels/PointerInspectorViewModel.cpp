@@ -51,8 +51,6 @@ void PointerInspectorViewModel::OnValueChanged(const BoolModelProperty::ChangeAr
     {
         DispatchMemoryRead([this]() { DoFrame(); });
     }
-
-    WindowViewModelBase::OnValueChanged(args);
 }
 
 void PointerInspectorViewModel::OnValueChanged(const IntModelProperty::ChangeArgs& args)
