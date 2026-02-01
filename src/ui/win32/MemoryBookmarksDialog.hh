@@ -2,7 +2,7 @@
 #define RA_UI_WIN32_DLG_MEMORYBOOKMARKS_H
 #pragma once
 
-#include "context/IEmulatorMemoryContext.hh"
+#include "data/context/EmulatorContext.hh"
 
 #include "ui/viewmodels/MemoryBookmarksViewModel.hh"
 #include "ui/win32/bindings/GridBinding.hh"
@@ -41,7 +41,7 @@ protected:
 
 private:
     class BookmarksGridBinding : public ra::ui::win32::bindings::GridBinding,
-        protected ra::context::IEmulatorMemoryContext::NotifyTarget
+        protected ra::data::context::EmulatorContext::NotifyTarget
     {
     public:
         explicit BookmarksGridBinding(ViewModelBase& vmViewModel);

@@ -1,13 +1,16 @@
-#include "CapturedMemoryBlock.hh"
+#include "MemBlock.hh"
+
+#include "util\GSL.hh"
 
 namespace ra {
 namespace data {
+namespace search {
 
-CapturedMemoryBlock::CapturedMemoryBlock(const CapturedMemoryBlock& other) noexcept :
+MemBlock::MemBlock(const MemBlock& other) noexcept :
     m_nFirstAddress(other.m_nFirstAddress),
     m_nBytesSize(other.m_nBytesSize),
-    m_nMatchingAddressCount(other.m_nMatchingAddressCount),
-    m_nAddressCount(other.m_nAddressCount)
+    m_nMatchingAddresses(other.m_nMatchingAddresses),
+    m_nMaxAddresses(other.m_nMaxAddresses)
 {
     if (IsBytesAllocated())
     {
@@ -19,14 +22,14 @@ CapturedMemoryBlock::CapturedMemoryBlock(const CapturedMemoryBlock& other) noexc
         std::memcpy(m_vBytes, other.m_vBytes, sizeof(m_vBytes));
     }
 
-    m_nMatchingAddressCount = other.m_nMatchingAddressCount;
+    m_nMatchingAddresses = other.m_nMatchingAddresses;
     if (!AreAllAddressesMatching())
     {
-        if ((m_nMatchingAddressCount + 7) / 8 > sizeof(m_vAddresses))
+        if ((m_nMatchingAddresses + 7) / 8 > sizeof(m_vAddresses))
         {
             auto* pAddresses = AllocateMatchingAddresses();
             if (pAddresses != nullptr)
-                std::memcpy(pAddresses, other.m_pAddresses, (m_nMatchingAddressCount + 7) / 8);
+                std::memcpy(pAddresses, other.m_pAddresses, (m_nMatchingAddresses + 7) / 8);
         }
         else
         {
@@ -35,11 +38,11 @@ CapturedMemoryBlock::CapturedMemoryBlock(const CapturedMemoryBlock& other) noexc
     }
 }
 
-CapturedMemoryBlock::CapturedMemoryBlock(CapturedMemoryBlock&& other) noexcept :
+MemBlock::MemBlock(MemBlock&& other) noexcept :
     m_nFirstAddress(other.m_nFirstAddress),
     m_nBytesSize(other.m_nBytesSize),
-    m_nMatchingAddressCount(other.m_nMatchingAddressCount),
-    m_nAddressCount(other.m_nAddressCount)
+    m_nMatchingAddresses(other.m_nMatchingAddresses),
+    m_nMaxAddresses(other.m_nMaxAddresses)
 {
     if (other.IsBytesAllocated())
     {
@@ -54,11 +57,11 @@ CapturedMemoryBlock::CapturedMemoryBlock(CapturedMemoryBlock&& other) noexcept :
 
     if (!AreAllAddressesMatching())
     {
-        if ((m_nMatchingAddressCount + 7) / 8 > sizeof(m_vAddresses))
+        if ((m_nMatchingAddresses + 7) / 8 > sizeof(m_vAddresses))
         {
             m_pAddresses = other.m_pAddresses;
             other.m_pAddresses = nullptr;
-            other.m_nMatchingAddressCount = 0;
+            other.m_nMatchingAddresses = 0;
         }
         else
         {
@@ -67,7 +70,7 @@ CapturedMemoryBlock::CapturedMemoryBlock(CapturedMemoryBlock&& other) noexcept :
     }
 }
 
-CapturedMemoryBlock::~CapturedMemoryBlock() noexcept
+MemBlock::~MemBlock() noexcept
 {
     if (IsBytesAllocated())
     {
@@ -76,11 +79,11 @@ CapturedMemoryBlock::~CapturedMemoryBlock() noexcept
             free(m_pAllocatedMemory);
     }
 
-    if (!AreAllAddressesMatching() && (m_nMatchingAddressCount + 7) / 8 > sizeof(m_vAddresses))
+    if (!AreAllAddressesMatching() && (m_nMatchingAddresses + 7) / 8 > sizeof(m_vAddresses))
         delete[] m_pAddresses;
 }
 
-void CapturedMemoryBlock::ShareMemory(const std::vector<CapturedMemoryBlock>& vBlocks, uint32_t nHash) noexcept
+void MemBlock::ShareMemory(const std::vector<MemBlock>& vBlocks, uint32_t nHash) noexcept
 {
     if (IsBytesAllocated())
     {
@@ -108,14 +111,14 @@ void CapturedMemoryBlock::ShareMemory(const std::vector<CapturedMemoryBlock>& vB
     }
 }
 
-//void CapturedMemoryBlock::SetRepeat(uint32_t nCount, uint32_t nValue) noexcept
-//{
-//    m_nBytesSize = (nCount * sizeof(uint32_t)) | 0x01000000;
-//    memcpy(m_vBytes, &nValue, 4);
-//    memcpy(&m_vBytes[4], &nValue, 4);
-//}
+void MemBlock::SetRepeat(uint32_t nCount, uint32_t nValue) noexcept
+{
+    m_nBytesSize = (nCount * sizeof(uint32_t)) | 0x01000000;
+    memcpy(m_vBytes, &nValue, 4);
+    memcpy(&m_vBytes[4], &nValue, 4);
+}
 
-void CapturedMemoryBlock::OptimizeMemory(const std::vector<CapturedMemoryBlock>& vBlocks) noexcept
+void MemBlock::OptimizeMemory(const std::vector<ra::data::search::MemBlock>& vBlocks) noexcept
 {
     if (!IsBytesAllocated())
         return;
@@ -132,18 +135,12 @@ void CapturedMemoryBlock::OptimizeMemory(const std::vector<CapturedMemoryBlock>&
 
     GSL_SUPPRESS_TYPE1
     const auto* pStop = reinterpret_cast<const uint32_t*>(pBytes + GetBytesSize());
-
-#ifdef COLLAPSE_FILLED
-    // TODO: this attempts to identify large chunks of repeated data to avoid
-    //       allocating AllocatedMemory for them. However, that breaks anything
-    //       trying to read from the GetBytes() pointer, so its unfeasible at this time.
-
-    const auto* pUniqueStart = pScan;
+    //const auto* pUniqueStart = pScan;
     uint32_t nHash = *pScan++;
     uint32_t nLast = nHash;
     uint32_t nRepeat = 1;
-    bool bWasSplit = false;
-    uint32_t nAddress = GetFirstAddress();
+    //bool bWasSplit = false;
+    //uint32_t nAddress = GetFirstAddress();
 
     while (pScan < pStop)
     {
@@ -154,26 +151,26 @@ void CapturedMemoryBlock::OptimizeMemory(const std::vector<CapturedMemoryBlock>&
         }
         else
         {
-            if (nRepeat >= 64 / 4) // 64 bytes of repeated data
-            {
-                const auto* pRepeatStart = pScan - nRepeat - 1;
-                const auto nUniqueSize = (pRepeatStart - pUniqueStart) * sizeof(uint32_t);
-                if (nUniqueSize)
-                {
-                    auto& pUniqueBlock = vBlocks.emplace_back(nAddress, nUniqueSize, nUniqueSize);
-                    memcpy(pUniqueBlock.GetBytes(), pUniqueStart, nUniqueSize);
-                    pUniqueBlock.ShareMemory(vBlocks, nHash);
-                    nAddress += nUniqueSize;
-                }
+            //if (nRepeat >= 64 / 4) // 64 bytes of repeated data
+            //{
+            //    const auto* pRepeatStart = pScan - nRepeat - 1;
+            //    const auto nUniqueSize = (pRepeatStart - pUniqueStart) * sizeof(uint32_t);
+            //    if (nUniqueSize)
+            //    {
+            //        auto& pUniqueBlock = vBlocks.emplace_back(nAddress, nUniqueSize, nUniqueSize);
+            //        memcpy(pUniqueBlock.GetBytes(), pUniqueStart, nUniqueSize);
+            //        pUniqueBlock.ShareMemory(vBlocks, nHash);
+            //        nAddress += nUniqueSize;
+            //    }
 
-                auto& pRepeatBlock = vBlocks.emplace_back(nAddress, 0, 0);
-                pRepeatBlock.SetRepeat(nRepeat, nLast);
-                nAddress += nRepeat * sizeof(uint32_t);
+            //    auto& pRepeatBlock = vBlocks.emplace_back(nAddress, 0, 0);
+            //    pRepeatBlock.SetRepeat(nRepeat, nLast);
+            //    nAddress += nRepeat * sizeof(uint32_t);
 
-                pUniqueStart = pScan - 1;
-                bWasSplit = true;
-                nHash = 0;
-            }
+            //    pUniqueStart = pScan - 1;
+            //    bWasSplit = true;
+            //    nHash = 0;
+            //}
 
             // branchless version of "if (nRepeat & 1) nHash ^= nScan"
             nHash ^= (nScan * (nRepeat & 1));
@@ -183,51 +180,46 @@ void CapturedMemoryBlock::OptimizeMemory(const std::vector<CapturedMemoryBlock>&
         }
     }
 
-    if (nRepeat >= 64 / 4) // 64 bytes of repeated data
-    {
-        const auto* pRepeatStart = pScan - nRepeat - 1;
-        const auto nUniqueSize = (pRepeatStart - pUniqueStart) * sizeof(uint32_t);
-        if (nUniqueSize)
-        {
-            auto& pUniqueBlock = vBlocks.emplace_back(nAddress, nUniqueSize, nUniqueSize);
-            memcpy(pUniqueBlock.GetBytes(), pUniqueStart, nUniqueSize);
-            pUniqueBlock.ShareMemory(vBlocks, nHash);
-            nAddress += nUniqueSize;
-        }
+    //if (nRepeat >= 64 / 4) // 64 bytes of repeated data
+    //{
+    //    const auto* pRepeatStart = pScan - nRepeat - 1;
+    //    const auto nUniqueSize = (pRepeatStart - pUniqueStart) * sizeof(uint32_t);
+    //    if (nUniqueSize)
+    //    {
+    //        auto& pUniqueBlock = vBlocks.emplace_back(nAddress, nUniqueSize, nUniqueSize);
+    //        memcpy(pUniqueBlock.GetBytes(), pUniqueStart, nUniqueSize);
+    //        pUniqueBlock.ShareMemory(vBlocks, nHash);
+    //        nAddress += nUniqueSize;
+    //    }
 
-        auto& pRepeatBlock = vBlocks.emplace_back(nAddress, 0, 0);
-        pRepeatBlock.SetRepeat(nRepeat, nLast);
-        nAddress += nRepeat * sizeof(uint32_t);
+    //    auto& pRepeatBlock = vBlocks.emplace_back(nAddress, 0, 0);
+    //    pRepeatBlock.SetRepeat(nRepeat, nLast);
+    //    nAddress += nRepeat * sizeof(uint32_t);
 
-        pUniqueStart = pScan;
-    }
+    //    pUniqueStart = pScan;
+    //}
 
-    if (bWasSplit)
-    {
-        // copy last block
-        const auto nUniqueSize = (pScan - pUniqueStart) * sizeof(uint32_t);
-        if (nUniqueSize)
-        {
-            auto& pUniqueBlock = vBlocks.emplace_back(nAddress, nUniqueSize, nUniqueSize);
-            memcpy(pUniqueBlock.GetBytes(), pUniqueStart, nUniqueSize);
-            pUniqueBlock.ShareMemory(vBlocks, nHash);
-        }
+    //if (bWasSplit)
+    //{
+    //    // copy last block
+    //    const auto nUniqueSize = (pScan - pUniqueStart) * sizeof(uint32_t);
+    //    if (nUniqueSize)
+    //    {
+    //        auto& pUniqueBlock = vBlocks.emplace_back(nAddress, nUniqueSize, nUniqueSize);
+    //        memcpy(pUniqueBlock.GetBytes(), pUniqueStart, nUniqueSize);
+    //        pUniqueBlock.ShareMemory(vBlocks, nHash);
+    //    }
 
-        vBlocks.erase(this);
-        return;
-    }
-#else
-    uint32_t nHash = *pScan++;
-    while (pScan < pStop)
-        nHash ^= *pScan++;
-#endif
+    //    vBlocks.erase(this);
+    //    return;
+    //}
 
     ShareMemory(vBlocks, nHash);
 }
 
-uint8_t* CapturedMemoryBlock::AllocateMatchingAddresses() noexcept
+uint8_t* MemBlock::AllocateMatchingAddresses() noexcept
 {
-    const auto nAddressesSize = (m_nAddressCount + 7) / 8;
+    const auto nAddressesSize = (m_nMaxAddresses + 7) / 8;
     if (nAddressesSize > sizeof(m_vAddresses))
     {
         if (m_pAddresses == nullptr)
@@ -239,13 +231,13 @@ uint8_t* CapturedMemoryBlock::AllocateMatchingAddresses() noexcept
     return &m_vAddresses[0];
 }
 
-void CapturedMemoryBlock::SetMatchingAddresses(std::vector<ra::data::ByteAddress>& vAddresses, gsl::index nFirstIndex, gsl::index nLastIndex)
+void MemBlock::SetMatchingAddresses(std::vector<ra::data::ByteAddress>& vAddresses, gsl::index nFirstIndex, gsl::index nLastIndex)
 {
-    m_nMatchingAddressCount = gsl::narrow_cast<unsigned int>(nLastIndex - nFirstIndex) + 1;
+    m_nMatchingAddresses = gsl::narrow_cast<unsigned int>(nLastIndex - nFirstIndex) + 1;
 
-    if (m_nMatchingAddressCount != m_nAddressCount)
+    if (m_nMatchingAddresses != m_nMaxAddresses)
     {
-        const auto nAddressesSize = (m_nAddressCount + 7) / 8;
+        const auto nAddressesSize = (m_nMaxAddresses + 7) / 8;
         unsigned char* pAddresses = AllocateMatchingAddresses();
         Expects(pAddresses != nullptr);
 
@@ -253,34 +245,31 @@ void CapturedMemoryBlock::SetMatchingAddresses(std::vector<ra::data::ByteAddress
         for (gsl::index nIndex = nFirstIndex; nIndex <= nLastIndex; ++nIndex)
         {
             const auto nOffset = vAddresses.at(nIndex) - m_nFirstAddress;
-            if (nOffset < m_nAddressCount)
-            {
-                const auto nBit = 1 << (nOffset & 7);
-                pAddresses[nOffset >> 3] |= nBit;
-            }
+            const auto nBit = 1 << (nOffset & 7);
+            pAddresses[nOffset >> 3] |= nBit;
         }
     }
 }
 
-void CapturedMemoryBlock::CopyMatchingAddresses(const CapturedMemoryBlock& pSource)
+void MemBlock::CopyMatchingAddresses(const MemBlock& pSource)
 {
-    Expects(pSource.m_nAddressCount == m_nAddressCount);
+    Expects(pSource.m_nMaxAddresses == m_nMaxAddresses);
     if (pSource.AreAllAddressesMatching())
     {
-        m_nMatchingAddressCount = m_nAddressCount;
+        m_nMatchingAddresses = m_nMaxAddresses;
     }
     else
     {
-        const auto nAddressesSize = (m_nAddressCount + 7) / 8;
+        const auto nAddressesSize = (m_nMaxAddresses + 7) / 8;
         unsigned char* pAddresses = AllocateMatchingAddresses();
         memcpy(pAddresses, pSource.GetMatchingAddressPointer(), nAddressesSize);
-        m_nMatchingAddressCount = pSource.m_nMatchingAddressCount;
+        m_nMatchingAddresses = pSource.m_nMatchingAddresses;
     }
 }
 
-void CapturedMemoryBlock::ExcludeMatchingAddress(ra::data::ByteAddress nAddress)
+void MemBlock::ExcludeMatchingAddress(ra::data::ByteAddress nAddress)
 {
-    const auto nAddressesSize = (m_nAddressCount + 7) / 8;
+    const auto nAddressesSize = (m_nMaxAddresses + 7) / 8;
     unsigned char* pAddresses = nullptr;
     const auto nIndex = nAddress - m_nFirstAddress;
     const auto nBit = 1 << (nIndex & 7);
@@ -300,25 +289,25 @@ void CapturedMemoryBlock::ExcludeMatchingAddress(ra::data::ByteAddress nAddress)
     }
 
     pAddresses[nIndex >> 3] &= ~nBit;
-    --m_nMatchingAddressCount;
+    --m_nMatchingAddresses;
 }
 
-bool CapturedMemoryBlock::ContainsAddress(ra::data::ByteAddress nAddress) const noexcept
+bool MemBlock::ContainsAddress(ra::data::ByteAddress nAddress) const noexcept
 {
     if (nAddress < m_nFirstAddress)
         return false;
 
     nAddress -= m_nFirstAddress;
-    return (nAddress < m_nAddressCount);
+    return (nAddress < m_nMaxAddresses);
 }
 
-bool CapturedMemoryBlock::ContainsMatchingAddress(ra::data::ByteAddress nAddress) const
+bool MemBlock::ContainsMatchingAddress(ra::data::ByteAddress nAddress) const
 {
     if (nAddress < m_nFirstAddress)
         return false;
 
     const auto nIndex = nAddress - m_nFirstAddress;
-    if (nIndex >= m_nAddressCount)
+    if (nIndex >= m_nMaxAddresses)
         return false;
 
     if (AreAllAddressesMatching())
@@ -330,15 +319,15 @@ bool CapturedMemoryBlock::ContainsMatchingAddress(ra::data::ByteAddress nAddress
     return (pAddresses[nIndex >> 3] & nBit);
 }
 
-ra::data::ByteAddress CapturedMemoryBlock::GetMatchingAddress(gsl::index nIndex) const noexcept
+ra::data::ByteAddress MemBlock::GetMatchingAddress(gsl::index nIndex) const noexcept
 {
     if (AreAllAddressesMatching())
         return m_nFirstAddress + gsl::narrow_cast<ra::data::ByteAddress>(nIndex);
 
-    const auto nAddressesSize = (m_nAddressCount + 7) / 8;
+    const auto nAddressesSize = (m_nMaxAddresses + 7) / 8;
     const uint8_t* pAddresses = (nAddressesSize > sizeof(m_vAddresses)) ? m_pAddresses : &m_vAddresses[0];
     ra::data::ByteAddress nAddress = m_nFirstAddress;
-    const ra::data::ByteAddress nStop = m_nFirstAddress + m_nAddressCount;
+    const ra::data::ByteAddress nStop = m_nFirstAddress + m_nMaxAddresses;
     uint8_t nMask = 0x01;
 
     if (pAddresses != nullptr)
@@ -377,5 +366,6 @@ ra::data::ByteAddress CapturedMemoryBlock::GetMatchingAddress(gsl::index nIndex)
     return 0;
 }
 
-} // namespace data
+} // namespace search
+} // namespace services
 } // namespace ra

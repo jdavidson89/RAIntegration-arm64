@@ -2,8 +2,6 @@
 #define RA_UI_MEMORYSEARCHVIEWMODEL_H
 #pragma once
 
-#include "context\IEmulatorMemoryContext.hh"
-
 #include "data\Types.hh"
 #include "data\context\EmulatorContext.hh"
 #include "data\context\GameContext.hh"
@@ -22,7 +20,7 @@ namespace viewmodels {
 
 class MemorySearchViewModel : public ViewModelBase,
     protected ViewModelCollectionBase::NotifyTarget,
-    protected ra::context::IEmulatorMemoryContext::NotifyTarget,
+    protected ra::data::context::EmulatorContext::NotifyTarget,
     protected ra::data::context::EmulatorContext::DispatchesReadMemory,
     protected ra::data::context::GameContext::NotifyTarget
 {
@@ -522,7 +520,7 @@ private:
     void DoApplyFilter();
     void UpdateResult(SearchResultViewModel& pRow, const ra::services::SearchResults& pResults,
         ra::services::SearchResult& pResult, bool bForceFilterCheck,
-        const ra::context::IEmulatorMemoryContext& pMemoryContext);
+        const ra::data::context::EmulatorContext& pEmulatorContext);
 
     void OnPredefinedFilterRangeChanged(const IntModelProperty::ChangeArgs& args);
     void OnFilterRangeChanged();

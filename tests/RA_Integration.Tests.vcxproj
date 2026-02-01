@@ -93,6 +93,7 @@
     <ClCompile Include="..\src\data\models\MemoryRegionsModel.cpp" />
     <ClCompile Include="..\src\data\models\RichPresenceModel.cpp" />
     <ClCompile Include="..\src\data\models\TriggerValidation.cpp" />
+    <ClCompile Include="..\src\data\search\MemBlock.cpp" />
     <ClCompile Include="..\src\pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
@@ -173,7 +174,6 @@
     <ClCompile Include="data\models\MemoryRegionsModel_Tests.cpp" />
     <ClCompile Include="data\models\RichPresenceModel_Tests.cpp" />
     <ClCompile Include="data\models\TriggerValidation_Tests.cpp" />
-    <ClCompile Include="devkit\context\mocks\MockEmulatorMemoryContext.cpp" />
     <ClCompile Include="devkit\context\mocks\MockRcClient.cpp" />
     <ClCompile Include="Exports_Tests.cpp" />
     <ClCompile Include="mocks\MockAchievementRuntime.cpp" />

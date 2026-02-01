@@ -63,8 +63,8 @@ void MemoryWatchListViewModel::InitializeNotifyTargets(bool syncNotes)
         pGameContext.AddNotifyTarget(*this);
     }
 
-    auto& pMemoryContext = ra::services::ServiceLocator::GetMutable<ra::context::IEmulatorMemoryContext>();
-    pMemoryContext.AddNotifyTarget(*this);
+    auto& pEmulatorContext = ra::services::ServiceLocator::GetMutable<ra::data::context::EmulatorContext>();
+    pEmulatorContext.AddNotifyTarget(*this);
 }
 
 void MemoryWatchListViewModel::OnCodeNoteMoved(ra::data::ByteAddress nOldAddress, ra::data::ByteAddress nNewAddress, const std::wstring& sNote)
@@ -112,15 +112,15 @@ void MemoryWatchListViewModel::OnByteWritten(ra::data::ByteAddress nAddress, uin
 void MemoryWatchListViewModel::DoFrame()
 {
     // don't watch for memory changes while we're processing the list. frozen bookmarks may write memory
-    auto& pMemoryContext = ra::services::ServiceLocator::GetMutable<ra::context::IEmulatorMemoryContext>();
-    pMemoryContext.RemoveNotifyTarget(*this);
+    auto& pEmulatorContext = ra::services::ServiceLocator::GetMutable<ra::data::context::EmulatorContext>();
+    pEmulatorContext.RemoveNotifyTarget(*this);
 
     m_vItems.BeginUpdate();
     for (auto& pItem : m_vItems)
         pItem.DoFrame();
     m_vItems.EndUpdate();
 
-    pMemoryContext.AddNotifyTarget(*this);
+    pEmulatorContext.AddNotifyTarget(*this);
 }
 
 void MemoryWatchListViewModel::OnViewModelBoolValueChanged(gsl::index nIndex, const BoolModelProperty::ChangeArgs& args)
@@ -132,14 +132,14 @@ void MemoryWatchListViewModel::OnViewModelBoolValueChanged(gsl::index nIndex, co
     }
     else if (args.Property == MemoryWatchViewModel::IsWritingMemoryProperty)
     {
-        auto& pMemoryContext = ra::services::ServiceLocator::GetMutable<ra::context::IEmulatorMemoryContext>();
+        auto& pEmulatorContext = ra::services::ServiceLocator::GetMutable<ra::data::context::EmulatorContext>();
         if (args.tNewValue)
         {
-            pMemoryContext.RemoveNotifyTarget(*this);
+            pEmulatorContext.RemoveNotifyTarget(*this);
         }
         else
         {
-            pMemoryContext.AddNotifyTarget(*this);
+            pEmulatorContext.AddNotifyTarget(*this);
 
             const auto* pItem = m_vItems.GetItemAt(nIndex);
             Expects(pItem != nullptr);

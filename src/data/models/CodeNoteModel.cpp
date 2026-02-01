@@ -2,6 +2,8 @@
 
 #include "context\IConsoleContext.hh"
 
+#include "data\context\EmulatorContext.hh"
+
 #include "services\ServiceLocator.hh"
 
 #include "util\Strings.hh"
@@ -90,7 +92,7 @@ static ra::data::ByteAddress ConvertPointer(ra::data::ByteAddress nAddress)
     return nAddress;
 }
 
-void CodeNoteModel::UpdateRawPointerValue(ra::data::ByteAddress nAddress, const ra::context::IEmulatorMemoryContext& pMemoryContext,
+void CodeNoteModel::UpdateRawPointerValue(ra::data::ByteAddress nAddress, const ra::data::context::EmulatorContext& pEmulatorContext,
                                           NoteMovedFunction fNoteMovedCallback)
 {
     if (m_pPointerData == nullptr)
@@ -98,7 +100,7 @@ void CodeNoteModel::UpdateRawPointerValue(ra::data::ByteAddress nAddress, const 
 
     m_pPointerData->PointerRead = true;
 
-    const uint32_t nValue = pMemoryContext.ReadMemory(nAddress, GetMemSize());
+    const uint32_t nValue = pEmulatorContext.ReadMemory(nAddress, GetMemSize());
     if (nValue != m_pPointerData->RawPointerValue)
     {
         m_pPointerData->RawPointerValue = nValue;
@@ -128,7 +130,7 @@ void CodeNoteModel::UpdateRawPointerValue(ra::data::ByteAddress nAddress, const 
             if (pNote.IsPointer())
             {
                 pNote.UpdateRawPointerValue(m_pPointerData->PointerAddress + pNote.GetAddress(),
-                                            pMemoryContext, fNoteMovedCallback);
+                                            pEmulatorContext, fNoteMovedCallback);
             }
         }
     }
@@ -1128,8 +1130,8 @@ void CodeNoteModel::ProcessIndirectNotes(const std::wstring& sNote, size_t nInde
     // flag it to be converted to an RA address when evaluating indirect notes in DoFrame()
     if (m_nMemSize == Memory::Size::ThirtyTwoBit || m_nMemSize == Memory::Size::ThirtyTwoBitBigEndian)
     {
-        const auto& pMemoryContext = ra::services::ServiceLocator::Get<ra::context::IEmulatorMemoryContext>();
-        const auto nMaxAddress = pMemoryContext.TotalMemorySize();
+        const auto& pEmulatorContext = ra::services::ServiceLocator::Get<ra::data::context::EmulatorContext>();
+        const auto nMaxAddress = pEmulatorContext.TotalMemorySize();
         const auto nUnderflowMinAddress = 0xFFFFFFFF - nMaxAddress + 1;
 
         pointerData->OffsetType = PointerData::OffsetType::Converted;

@@ -55,16 +55,16 @@ void CodeNotesDialog::Presenter::OnClosed() noexcept { m_pDialog.reset(); }
 CodeNotesDialog::CodeNotesGridBinding::CodeNotesGridBinding(ViewModelBase& vmViewModel)
     : ra::ui::win32::bindings::MultiLineGridBinding(vmViewModel)
 {
-    auto& pMemoryContext = ra::services::ServiceLocator::GetMutable<ra::context::IEmulatorMemoryContext>();
-    pMemoryContext.AddNotifyTarget(*this);
+    auto& pEmulatorContext = ra::services::ServiceLocator::GetMutable<ra::data::context::EmulatorContext>();
+    pEmulatorContext.AddNotifyTarget(*this);
 }
 
 CodeNotesDialog::CodeNotesGridBinding::~CodeNotesGridBinding()
 {
     if (ra::services::ServiceLocator::Exists<ra::data::context::EmulatorContext>())
     {
-        auto& pMemoryContext = ra::services::ServiceLocator::GetMutable<ra::context::IEmulatorMemoryContext>();
-        pMemoryContext.RemoveNotifyTarget(*this);
+        auto& pEmulatorContext = ra::services::ServiceLocator::GetMutable<ra::data::context::EmulatorContext>();
+        pEmulatorContext.RemoveNotifyTarget(*this);
     }
 }
 

@@ -1,7 +1,5 @@
 #include "AssetListViewModel.hh"
 
-#include "context\IEmulatorMemoryContext.hh"
-
 #include "data\context\GameContext.hh"
 #include "data\context\UserContext.hh"
 
@@ -413,8 +411,8 @@ void AssetListViewModel::OnValueChanged(const BoolModelProperty::ChangeArgs& arg
         auto& pRuntime = ra::services::ServiceLocator::GetMutable<ra::services::AchievementRuntime>();
         pRuntime.SetPaused(!args.tNewValue);
 
-        auto& pMemoryContext = ra::services::ServiceLocator::GetMutable<ra::context::IEmulatorMemoryContext>();
-        pMemoryContext.SetMemoryModified();
+        auto& pEmulatorContext = ra::services::ServiceLocator::GetMutable<ra::data::context::EmulatorContext>();
+        pEmulatorContext.SetMemoryModified();
     }
 
     WindowViewModelBase::OnValueChanged(args);

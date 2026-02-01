@@ -58,8 +58,7 @@ void PointerFinderViewModel::StateViewModel::ToggleCapture()
 
 void PointerFinderViewModel::StateViewModel::Capture()
 {
-    const auto& pMemoryContext = ra::services::ServiceLocator::Get<ra::context::IEmulatorMemoryContext>();
-    if (pMemoryContext.TotalMemorySize() == 0)
+    if (ra::services::ServiceLocator::Get<ra::data::context::EmulatorContext>().TotalMemorySize() == 0)
     {
         ra::ui::viewmodels::MessageBoxViewModel::ShowErrorMessage(L"No game loaded.", L"Cannot capture memory without a loaded game.");
         return;
@@ -90,8 +89,8 @@ void PointerFinderViewModel::StateViewModel::Capture()
     }
 
     DispatchMemoryRead([this]() {
-        const auto& pMemoryContext = ra::services::ServiceLocator::Get<ra::context::IEmulatorMemoryContext>();
-        const auto nMemorySize = gsl::narrow<ra::data::ByteAddress>(pMemoryContext.TotalMemorySize());
+        const auto& pEmulatorContext = ra::services::ServiceLocator::GetMutable<ra::data::context::EmulatorContext>();
+        const auto nMemorySize = gsl::narrow<ra::data::ByteAddress>(pEmulatorContext.TotalMemorySize());
 
         m_pCapture.reset(new ra::services::SearchResults());
         m_pCapture->Initialize(0, nMemorySize, m_pOwner->GetSearchType());

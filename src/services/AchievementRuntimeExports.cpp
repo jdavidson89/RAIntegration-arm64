@@ -5,9 +5,7 @@
 #include "RA_Resource.h"
 
 #include "context\IConsoleContext.hh"
-#include "context\IEmulatorMemoryContext.hh"
 #include "context\IRcClient.hh"
-#include "context\impl\EmulatorMemoryContext.hh"
 
 #include "data\context\GameContext.hh"
 
@@ -73,9 +71,9 @@ private:
     typedef struct MemoryBlockWrapper
     {
         ra::data::ByteAddress nOffset;
-        ra::context::impl::EmulatorMemoryContext::MemoryReadFunction* fReadByte;
-        ra::context::impl::EmulatorMemoryContext::MemoryWriteFunction* fWriteByte;
-        ra::context::impl::EmulatorMemoryContext::MemoryReadBlockFunction* fReadBlock;
+        ra::data::context::EmulatorContext::MemoryReadFunction* fReadByte;
+        ra::data::context::EmulatorContext::MemoryWriteFunction* fWriteByte;
+        ra::data::context::EmulatorContext::MemoryReadBlockFunction* fReadBlock;
     } MemoryBlockWrapper;
 
     static std::array<AchievementRuntimeExports::MemoryBlockWrapper, 16> s_memoryBlockWrappers;
@@ -85,11 +83,8 @@ public:
     {
         const auto& pConsoleContext = ra::services::ServiceLocator::Get<ra::context::IConsoleContext>();
 
-        auto* pEmulatorMemoryContext = dynamic_cast<ra::context::impl::EmulatorMemoryContext*>(&ra::services::ServiceLocator::GetMutable<ra::context::IEmulatorMemoryContext>());
-        if (!pEmulatorMemoryContext)
-            return;
-
-        pEmulatorMemoryContext->ClearMemoryBlocks();
+        auto& pEmulatorContext = ra::services::ServiceLocator::GetMutable<ra::data::context::EmulatorContext>();
+        pEmulatorContext.ClearMemoryBlocks();
 
         gsl::index nIndex = 0;
         uint32_t nBytes = 0;
@@ -101,10 +96,10 @@ public:
             {
                 if (nBytes > 0)
                 {
-                    pEmulatorMemoryContext->AddMemoryBlock(nIndex, nBytes,
+                    pEmulatorContext.AddMemoryBlock(nIndex, nBytes,
                         s_memoryBlockWrappers.at(nIndex).fReadByte,
                         s_memoryBlockWrappers.at(nIndex).fWriteByte);
-                    pEmulatorMemoryContext->AddMemoryBlockReader(nIndex,
+                    pEmulatorContext.AddMemoryBlockReader(nIndex,
                         s_memoryBlockWrappers.at(nIndex).fReadBlock);
 
                     nBytes = 0;
@@ -112,7 +107,7 @@ public:
                     s_memoryBlockWrappers.at(nIndex).nOffset = pRegion.GetStartAddress();
                 }
 
-                pEmulatorMemoryContext->AddMemoryBlock(nIndex++, nSize, nullptr, nullptr);
+                pEmulatorContext.AddMemoryBlock(nIndex++, nSize, nullptr, nullptr);
 
                 Expects(gsl::narrow_cast<size_t>(nIndex) < s_memoryBlockWrappers.size());
                 s_memoryBlockWrappers.at(nIndex).nOffset = pRegion.GetEndAddress() + 1;
@@ -125,10 +120,10 @@ public:
 
         if (nBytes > 0)
         {
-            pEmulatorMemoryContext->AddMemoryBlock(nIndex, nBytes,
+            pEmulatorContext.AddMemoryBlock(nIndex, nBytes,
                 s_memoryBlockWrappers.at(nIndex).fReadByte,
                 s_memoryBlockWrappers.at(nIndex).fWriteByte);
-            pEmulatorMemoryContext->AddMemoryBlockReader(nIndex,
+            pEmulatorContext.AddMemoryBlockReader(nIndex,
                 s_memoryBlockWrappers.at(nIndex).fReadBlock);
         }
     }
@@ -591,11 +586,11 @@ public:
             pAchievement->GetChanges() != ra::data::models::AssetChanges::None) // unpublished changes
             return RC_CLIENT_RAINTEGRATION_ACHIEVEMENT_STATE_MODIFIED;
 
-        const auto& pMemoryContext = ra::services::ServiceLocator::Get<ra::context::IEmulatorMemoryContext>();
-        if (pMemoryContext.WasMemoryModified())
+        const auto& pEmulatorContext = ra::services::ServiceLocator::Get<ra::data::context::EmulatorContext>();
+        if (pEmulatorContext.WasMemoryModified())
             return RC_CLIENT_RAINTEGRATION_ACHIEVEMENT_STATE_INSECURE;
 
-        if (_RA_HardcoreModeIsActive() && pMemoryContext.IsMemoryInsecure())
+        if (_RA_HardcoreModeIsActive() && pEmulatorContext.IsMemoryInsecure())
             return RC_CLIENT_RAINTEGRATION_ACHIEVEMENT_STATE_INSECURE;
 
         return RC_CLIENT_RAINTEGRATION_ACHIEVEMENT_STATE_PUBLISHED;

@@ -5,8 +5,6 @@
 #include "util\Log.hh"
 #include "util\Strings.hh"
 
-#include "context\IEmulatorMemoryContext.hh"
-
 #include "data\context\GameContext.hh"
 
 #include "services\AchievementRuntime.hh"
@@ -164,8 +162,8 @@ void SessionTracker::UpdateSession(time_t tSessionStart)
     const auto& pConfiguration = ra::services::ServiceLocator::Get<ra::services::IConfiguration>();
     if (pConfiguration.IsFeatureEnabled(ra::services::Feature::Hardcore))
     {
-        const auto& pMemoryContext = ra::services::ServiceLocator::Get<ra::context::IEmulatorMemoryContext>();
-        pMemoryContext.IsMemoryInsecure();
+        const auto& pEmulatorContext = ra::services::ServiceLocator::Get<ra::data::context::EmulatorContext>();
+        pEmulatorContext.IsMemoryInsecure();
     }
 }
 

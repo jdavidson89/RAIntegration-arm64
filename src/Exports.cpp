@@ -11,7 +11,6 @@
 #include "context\IConsoleContext.hh"
 #include "context\IRcClient.hh"
 #include "context\impl\ConsoleContext.hh"
-#include "context\impl\EmulatorMemoryContext.hh"
 
 #include "data\context\EmulatorContext.hh"
 #include "data\context\GameContext.hh"
@@ -429,30 +428,20 @@ API void CCONV _RA_SetUserAgentDetail(const char* sDetail)
 
 API void CCONV _RA_InstallMemoryBank(int nBankID, void* pReader, void* pWriter, int nBankSize)
 {
-    auto* pEmulatorMemoryContext = dynamic_cast<ra::context::impl::EmulatorMemoryContext*>(&ra::services::ServiceLocator::GetMutable<ra::context::IEmulatorMemoryContext>());
-    if (pEmulatorMemoryContext)
-    {
-        pEmulatorMemoryContext->AddMemoryBlock(nBankID, nBankSize,
-            static_cast<ra::context::impl::EmulatorMemoryContext::MemoryReadFunction*>(pReader),
-            static_cast<ra::context::impl::EmulatorMemoryContext::MemoryWriteFunction*>(pWriter));
-    }
+    ra::services::ServiceLocator::GetMutable<ra::data::context::EmulatorContext>().AddMemoryBlock(nBankID, nBankSize,
+        static_cast<ra::data::context::EmulatorContext::MemoryReadFunction*>(pReader),
+        static_cast<ra::data::context::EmulatorContext::MemoryWriteFunction*>(pWriter));
 }
 
 API void CCONV _RA_InstallMemoryBankBlockReader(int nBankID, void* pReader)
 {
-    auto* pEmulatorMemoryContext = dynamic_cast<ra::context::impl::EmulatorMemoryContext*>(&ra::services::ServiceLocator::GetMutable<ra::context::IEmulatorMemoryContext>());
-    if (pEmulatorMemoryContext)
-    {
-        pEmulatorMemoryContext->AddMemoryBlockReader(
-            nBankID, static_cast<ra::context::impl::EmulatorMemoryContext::MemoryReadBlockFunction*>(pReader));
-    }
+    ra::services::ServiceLocator::GetMutable<ra::data::context::EmulatorContext>().AddMemoryBlockReader(
+        nBankID, static_cast<ra::data::context::EmulatorContext::MemoryReadBlockFunction*>(pReader));
 }
 
 API void CCONV _RA_ClearMemoryBanks()
 {
-    auto* pEmulatorMemoryContext = dynamic_cast<ra::context::impl::EmulatorMemoryContext*>(&ra::services::ServiceLocator::GetMutable<ra::context::IEmulatorMemoryContext>());
-    if (pEmulatorMemoryContext)
-        pEmulatorMemoryContext->ClearMemoryBlocks();;
+    ra::services::ServiceLocator::GetMutable<ra::data::context::EmulatorContext>().ClearMemoryBlocks();
 }
 
 API unsigned int CCONV _RA_IdentifyRom(const BYTE* pROM, unsigned int nROMSize)

@@ -438,6 +438,9 @@
     <ClCompile Include="..\src\services\search\SearchImpl.cpp">
       <Filter>Code</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\data\search\MemBlock.cpp">
+      <Filter>Code</Filter>
+    </ClCompile>
     <ClCompile Include="..\src\ui\viewmodels\MemoryWatchViewModel.cpp">
       <Filter>Code</Filter>
     </ClCompile>
@@ -463,9 +466,6 @@
       <Filter>Code</Filter>
     </ClCompile>
     <ClCompile Include="..\src\services\impl\OfflineRcClient.cpp">
-      <Filter>Code</Filter>
-    </ClCompile>
-    <ClCompile Include="devkit\context\mocks\MockEmulatorMemoryContext.cpp">
       <Filter>Code</Filter>
     </ClCompile>
   </ItemGroup>

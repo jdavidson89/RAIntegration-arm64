@@ -1,10 +1,9 @@
 #include "RA_Defs.h"
 
-#include "context/IEmulatorMemoryContext.hh"
+#include "util\Strings.hh"
+#include "services\ServiceLocator.hh"
 
-#include "services/ServiceLocator.hh"
-
-#include "util/Strings.hh"
+#include "data\context\EmulatorContext.hh"
 
 #include <rcheevos/src/rcheevos/rc_internal.h>
 
@@ -14,8 +13,8 @@ _Use_decl_annotations_
 std::string ByteAddressToString(ra::data::ByteAddress nAddr)
 {
 #ifndef RA_UTEST
-    const auto& pEmulatorMemoryContext = ra::services::ServiceLocator::Get<ra::context::IEmulatorMemoryContext>();
-    return pEmulatorMemoryContext.FormatAddress(nAddr);
+    const auto& pEmulatorContext = ra::services::ServiceLocator::Get<ra::data::context::EmulatorContext>();
+    return pEmulatorContext.FormatAddress(nAddr);
 #else
     return ra::StringPrintf("0x%04x", nAddr);
 #endif
