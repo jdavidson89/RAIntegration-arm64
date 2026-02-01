@@ -330,9 +330,8 @@ void MemorySearchViewModel::DefinePredefinedFilterRange(gsl::index nIndex, int n
 
     if (bIncludeRangeInLabel)
     {
-        const auto& pMemoryContext = ra::services::ServiceLocator::Get<ra::context::IEmulatorMemoryContext>();
         pItem->SetLabel(ra::StringPrintf(L"%s (%s-%s)", sLabel,
-            pMemoryContext.FormatAddress(nStartAddress), pMemoryContext.FormatAddress(nEndAddress)));
+            ra::ByteAddressToString(nStartAddress), ra::ByteAddressToString(nEndAddress)));
     }
     else
     {
@@ -384,9 +383,8 @@ void MemorySearchViewModel::OnPredefinedFilterRangeChanged(const IntModelPropert
     Ensures(pEntry != nullptr);
 
     m_bSelectingFilter = true;
-    const auto& pMemoryContext = ra::services::ServiceLocator::Get<ra::context::IEmulatorMemoryContext>();
     SetFilterRange(ra::StringPrintf(L"%s-%s",
-        pMemoryContext.FormatAddress(pEntry->GetStartAddress()), pMemoryContext.FormatAddress(pEntry->GetEndAddress())));
+        ra::ByteAddressToString(pEntry->GetStartAddress()), ra::ByteAddressToString(pEntry->GetEndAddress())));
     m_bSelectingFilter = false;
 }
 
@@ -414,9 +412,7 @@ void MemorySearchViewModel::OnFilterRangeChanged()
 
     pEntry->SetStartAddress(nStart);
     pEntry->SetEndAddress(nEnd);
-
-    const auto& pMemoryContext = ra::services::ServiceLocator::Get<ra::context::IEmulatorMemoryContext>();
-    pEntry->SetLabel(ra::StringPrintf(L"Custom (%s-%s)", pMemoryContext.FormatAddress(nStart), pMemoryContext.FormatAddress(nEnd)));
+    pEntry->SetLabel(ra::StringPrintf(L"Custom (%s-%s)", ra::ByteAddressToString(nStart), ra::ByteAddressToString(nEnd)));
 
     SetPredefinedFilterRange(MEMORY_RANGE_CUSTOM);
 }
@@ -878,7 +874,7 @@ void MemorySearchViewModel::UpdateResults()
 
             pRow->nAddress = pResult.nAddress;
 
-            auto sAddress = pMemoryContext.FormatAddress(pResult.nAddress);
+            auto sAddress = ra::ByteAddressToString(pResult.nAddress);
             switch (pResult.nSize)
             {
                 case ra::data::Memory::Size::NibbleLower:
@@ -1325,7 +1321,6 @@ void MemorySearchViewModel::SaveResults(ra::services::TextWriter& sFile, std::fu
 
     sFile.WriteLine("Address,Value,PreviousValue,InitialValue");
 
-    const auto& pMemoryContext = ra::services::ServiceLocator::Get<ra::context::IEmulatorMemoryContext>();
     if (pCompareResults.GetSize() == ra::data::Memory::Size::NibbleLower)
     {
         for (gsl::index nIndex = 0; ra::to_unsigned(nIndex) < pResults.MatchingAddressCount(); ++nIndex)
@@ -1337,7 +1332,7 @@ void MemorySearchViewModel::SaveResults(ra::services::TextWriter& sFile, std::fu
             const auto nAddress = pResult.nAddress >> 1;
 
             sFile.WriteLine(ra::StringPrintf(L"%s%s,%s,%s,%s",
-                pMemoryContext.FormatAddress(nAddress), (pResult.nAddress & 1) ? "U" : "L",
+                ra::ByteAddressToString(nAddress), (pResult.nAddress & 1) ? "U" : "L",
                 pResults.GetFormattedValue(nAddress, nSize),
                 pCompareResults.GetFormattedValue(nAddress, nSize),
                 pInitialResults.GetFormattedValue(nAddress, nSize)));
@@ -1360,7 +1355,7 @@ void MemorySearchViewModel::SaveResults(ra::services::TextWriter& sFile, std::fu
 
             const auto nAddress = pResult.nAddress;
             sFile.WriteLine(ra::StringPrintf(L"%s,%s,%s,%s",
-                pMemoryContext.FormatAddress(nAddress),
+                ra::ByteAddressToString(nAddress),
                 pResults.GetFormattedValue(nAddress, nSize),
                 pCompareResults.GetFormattedValue(nAddress, nSize),
                 pInitialResults.GetFormattedValue(nAddress, nSize)));
@@ -1487,7 +1482,7 @@ void MemorySearchViewModel::LoadResults(ra::services::TextReader& pTextReader,
         if (index2 == std::string::npos)
             continue;
 
-        pResult.nAddress = ra::data::Memory::ParseAddress(sLine.substr(0, index));
+        pResult.nAddress = ra::ByteAddressFromString(sLine.substr(0, index));
 
         const auto sValue = sLine.substr(index + 1, index2 - index - 1);
         if (bIsFloat)

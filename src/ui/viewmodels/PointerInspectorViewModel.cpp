@@ -62,8 +62,7 @@ void PointerInspectorViewModel::OnValueChanged(const IntModelProperty::ChangeArg
         const auto nAddress = static_cast<ra::data::ByteAddress>(args.tNewValue);
 
         m_bSyncingAddress = true;
-        const auto& pMemoryContext = ra::services::ServiceLocator::Get<ra::context::IEmulatorMemoryContext>();
-        SetCurrentAddressText(pMemoryContext.FormatAddress(nAddress));
+        SetCurrentAddressText(ra::Widen(ra::ByteAddressToString(nAddress)));
         m_bSyncingAddress = false;
 
         OnCurrentAddressChanged(nAddress);
@@ -88,7 +87,7 @@ void PointerInspectorViewModel::OnValueChanged(const StringModelProperty::Change
     }
     else if (args.Property == CurrentAddressTextProperty && !m_bSyncingAddress)
     {
-        const auto nAddress = ra::data::Memory::ParseAddress(args.tNewValue);
+        const auto nAddress = ra::ByteAddressFromString(ra::Narrow(args.tNewValue));
 
         // ignore change event for current address so text field is not modified
         m_bSyncingAddress = true;

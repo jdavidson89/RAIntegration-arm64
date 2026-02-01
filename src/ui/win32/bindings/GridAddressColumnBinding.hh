@@ -4,9 +4,7 @@
 
 #include "GridColumnBinding.hh"
 
-#include "context/IEmulatorMemoryContext.hh"
-
-#include "services/ServiceLocator.hh"
+#include "RA_Defs.h"
 
 namespace ra {
 namespace ui {
@@ -25,8 +23,7 @@ public:
     std::wstring GetText(const ra::ui::ViewModelCollectionBase& vmItems, gsl::index nIndex) const override
     {
         const auto nValue = vmItems.GetItemValue(nIndex, *m_pBoundProperty);
-        const auto& pMemoryContext = ra::services::ServiceLocator::Get<ra::context::IEmulatorMemoryContext>();
-        return pMemoryContext.FormatAddress(nValue);
+        return ra::Widen(ra::ByteAddressToString(nValue));
     }
 
     bool DependsOn(const ra::ui::IntModelProperty& pProperty) const noexcept override

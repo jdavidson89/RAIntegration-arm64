@@ -132,8 +132,6 @@ void AssetUploadViewModel::QueueCodeNote(ra::data::models::CodeNotesModel& pNote
         const auto& pUserContext = ra::services::ServiceLocator::Get<ra::context::UserContext>();
         if (pUserContext.GetDisplayName() != *pOriginalAuthor)
         {
-            const auto& pMemoryContext = ra::services::ServiceLocator::Get<ra::context::IEmulatorMemoryContext>();
-
             // author changed - confirm overwrite
             std::wstring sEmpty;
             const auto* pOriginalNote = pNotes.GetServerCodeNote(nAddress);
@@ -148,7 +146,7 @@ void AssetUploadViewModel::QueueCodeNote(ra::data::models::CodeNotesModel& pNote
             if (!pNote->empty())
             {
                 vmPrompt.SetHeader(
-                    ra::StringPrintf(L"Overwrite note for address %s?", pMemoryContext.FormatAddress(nAddress)));
+                    ra::StringPrintf(L"Overwrite note for address %s?", ra::ByteAddressToString(nAddress)));
 
                 if (pOriginalNote->length() > 256 || pNote->length() > 256)
                 {
@@ -168,7 +166,7 @@ void AssetUploadViewModel::QueueCodeNote(ra::data::models::CodeNotesModel& pNote
             else
             {
                 const auto pNoteShort = ShortenNote(*pOriginalNote);
-                vmPrompt.SetHeader(ra::StringPrintf(L"Delete note for address %s?", pMemoryContext.FormatAddress(nAddress)));
+                vmPrompt.SetHeader(ra::StringPrintf(L"Delete note for address %s?", ra::ByteAddressToString(nAddress)));
                 vmPrompt.SetMessage(ra::StringPrintf(L"Are you sure you want to delete %s's note:\n\n%s", *pOriginalAuthor, pNoteShort));
             }
 

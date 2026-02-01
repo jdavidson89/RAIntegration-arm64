@@ -1,5 +1,7 @@
 #include "MemoryRegionsModel.hh"
 
+#include "RA_Defs.h"
+
 #include "context/IEmulatorMemoryContext.hh"
 
 #include "services/ServiceLocator.hh"
@@ -16,7 +18,6 @@ MemoryRegionsModel::MemoryRegionsModel() noexcept
 
 void MemoryRegionsModel::Serialize(ra::services::TextWriter& pWriter) const
 {
-    const auto& pMemoryContext = ra::services::ServiceLocator::Get<ra::context::IEmulatorMemoryContext>();
     bool first = true;
 
     for (const auto& pIter : m_vRegions)
@@ -33,9 +34,9 @@ void MemoryRegionsModel::Serialize(ra::services::TextWriter& pWriter) const
             pWriter.Write("M0:");
         }
 
-        pWriter.Write(pMemoryContext.FormatAddress(pIter.GetStartAddress()));
+        pWriter.Write(ra::ByteAddressToString(pIter.GetStartAddress()));
         pWriter.Write("-");
-        pWriter.Write(pMemoryContext.FormatAddress(pIter.GetEndAddress()));
+        pWriter.Write(ra::ByteAddressToString(pIter.GetEndAddress()));
         WriteQuoted(pWriter, pIter.GetDescription());
     }
 }
@@ -44,11 +45,11 @@ bool MemoryRegionsModel::Deserialize(ra::Tokenizer& pTokenizer)
 {
     const auto sStartAddress = pTokenizer.ReadTo('-');
     pTokenizer.Consume('-');
-    const auto nStartAddress = Memory::ParseAddress(sStartAddress);
+    const auto nStartAddress = ra::ByteAddressFromString(sStartAddress);
 
     const auto sEndAddress = pTokenizer.ReadTo(':');
     pTokenizer.Consume(':');
-    const auto nEndAddress = Memory::ParseAddress(sEndAddress);
+    const auto nEndAddress = ra::ByteAddressFromString(sEndAddress);
 
     std::wstring sDescription;
     if (!ReadQuoted(pTokenizer, sDescription))
@@ -74,7 +75,59 @@ void MemoryRegionsModel::ResetCustomRegions()
     SetValue(ChangesProperty, ra::etoi(AssetChanges::None));
 }
 
-bool MemoryRegionsModel::ParseFilterRange(const std::wstring& sRange, ra::data::ByteAddress& nStart, ra::data::ByteAddress& nEnd)
+static bool ParseAddress(const wchar_t** pointer, ra::data::ByteAddress& address) noexcept
+{
+    if (pointer == nullptr)
+        return false;
+
+    const wchar_t* ptr = *pointer;
+    if (ptr == nullptr)
+        return false;
+
+    if (*ptr == '$')
+    {
+        ++ptr;
+    }
+    else if (ptr[0] == '0' && ptr[1] == 'x')
+    {
+        ptr += 2;
+    }
+
+    const wchar_t* start = ptr;
+    address = 0;
+    while (*ptr)
+    {
+        if (*ptr >= '0' && *ptr <= '9')
+        {
+            address <<= 4;
+            address += (*ptr - '0');
+        }
+        else if (*ptr >= 'a' && *ptr <= 'f')
+        {
+            address <<= 4;
+            address += (*ptr - 'a' + 10);
+        }
+        else if (*ptr >= 'A' && *ptr <= 'F')
+        {
+            address <<= 4;
+            address += (*ptr - 'A' + 10);
+        }
+        else
+        {
+            break;
+        }
+
+        ++ptr;
+    }
+
+    if (ptr == start)
+        return false;
+
+    *pointer = ptr;
+    return true;
+}
+
+bool MemoryRegionsModel::ParseFilterRange(const std::wstring& sRange, _Out_ ra::data::ByteAddress& nStart, _Out_ ra::data::ByteAddress& nEnd)
 {
     const auto& pMemoryContext = ra::services::ServiceLocator::Get<ra::context::IEmulatorMemoryContext>();
     const auto nMax = gsl::narrow_cast<ra::data::ByteAddress>(pMemoryContext.TotalMemorySize()) - 1;
@@ -87,7 +140,40 @@ bool MemoryRegionsModel::ParseFilterRange(const std::wstring& sRange, ra::data::
         return true;
     }
 
-    if (!Memory::TryParseAddressRange(sRange, nStart, nEnd))
+    const wchar_t* ptr = sRange.data();
+    if (!ptr || !ParseAddress(&ptr, nStart))
+    {
+        nStart = 0;
+        nEnd = 0;
+        return false;
+    }
+
+    while (iswspace(*ptr))
+        ++ptr;
+
+    if (*ptr == '\0')
+    {
+        nEnd = nStart;
+        return true;
+    }
+
+    if (*ptr != '-')
+    {
+        nEnd = 0;
+        return false;
+    }
+
+    ++ptr;
+    while (iswspace(*ptr))
+        ++ptr;
+
+    if (!ParseAddress(&ptr, nEnd))
+    {
+        nEnd = 0;
+        return false;
+    }
+
+    if (*ptr != '\0')
         return false;
 
     if (nStart > nMax)
@@ -95,6 +181,8 @@ bool MemoryRegionsModel::ParseFilterRange(const std::wstring& sRange, ra::data::
 
     if (nEnd > nMax)
         nEnd = nMax;
+    else if (nEnd < nStart)
+        std::swap(nStart, nEnd);
 
     return true;
 }

@@ -63,7 +63,6 @@ static bool ValidateLeaderboardTrigger(const rc_trigger_t* pTrigger, std::wstrin
 static bool ValidateCodeNotesOperand(const rc_operand_t& pOperand, const ra::data::models::CodeNotesModel& pNotes,
                                      std::wstring& sError)
 {
-    const auto& pMemoryContext = ra::services::ServiceLocator::Get<ra::context::IEmulatorMemoryContext>();
     const auto nMemRefSize = Memory::SizeFromRcheevosSize(pOperand.size);
 
     const auto nAddress = pOperand.value.memref->address;
@@ -85,7 +84,7 @@ static bool ValidateCodeNotesOperand(const rc_operand_t& pOperand, const ra::dat
         nStartAddress = pNotes.FindCodeNoteStart(nAddress);
         if (nStartAddress == 0xFFFFFFFF)
         {
-            sError = ra::StringPrintf(L"No code note for address %s", pMemoryContext.FormatAddress(nAddress).substr(2));
+            sError = ra::StringPrintf(L"No code note for address %s", ra::ByteAddressToString(nAddress).substr(2));
             return false;
         }
 
@@ -106,18 +105,18 @@ static bool ValidateCodeNotesOperand(const rc_operand_t& pOperand, const ra::dat
             return true;
 
         sError = ra::StringPrintf(L"%s read of address %s differs from implied code note size %s", Memory::SizeString(nMemRefSize),
-                                  pMemoryContext.FormatAddress(nAddress).substr(2), Memory::SizeString(Memory::Size::EightBit));
+                                  ra::ByteAddressToString(nAddress).substr(2), Memory::SizeString(Memory::Size::EightBit));
     }
     else
     {
         sError = ra::StringPrintf(L"%s read of address %s differs from code note size %s", Memory::SizeString(nMemRefSize),
-                                  pMemoryContext.FormatAddress(nAddress).substr(2), Memory::SizeString(nNoteSize));
+                                  ra::ByteAddressToString(nAddress).substr(2), Memory::SizeString(nNoteSize));
     }
 
     if (nStartAddress != nAddress)
     {
         sError.append(L" at ");
-        sError.append(pMemoryContext.FormatAddress(nStartAddress).substr(2));
+        sError.append(ra::Widen(ra::ByteAddressToString(nStartAddress).substr(2)));
     }
 
     return false;
