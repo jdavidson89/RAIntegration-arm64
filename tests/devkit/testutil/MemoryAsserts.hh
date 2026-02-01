@@ -7,6 +7,9 @@
 #include "data\Memory.hh"
 #include "util\TypeCasts.hh"
 
+// The rcheevos nameless struct warning is only affecting the test project, for now we have
+// to disable the warning in the project or pragmatically in rcheevos. Careful not to use nameless structs here.
+
 namespace Microsoft {
 namespace VisualStudio {
 namespace CppUnitTestFramework {

@@ -2,7 +2,7 @@
 #define RA_DATA_LEADERBOARD_MODEL_H
 #pragma once
 
-#include "data/models/AssetModelBase.hh"
+#include "AssetModelBase.hh"
 
 #include "CapturedTriggerHits.hh"
 

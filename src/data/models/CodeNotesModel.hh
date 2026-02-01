@@ -2,9 +2,9 @@
 #define RA_DATA_CODE_NOTES_MODEL_H
 #pragma once
 
-#include "data/models/AssetModelBase.hh"
+#include "AssetModelBase.hh"
 
-#include "data/models/CodeNoteModel.hh"
+#include "CodeNoteModel.hh"
 
 #include "data/Types.hh"
 
