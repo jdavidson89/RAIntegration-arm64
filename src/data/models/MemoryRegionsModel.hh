@@ -4,7 +4,7 @@
 
 #include "AssetModelBase.hh"
 
-#include "data/MemoryRegion.hh"
+#include "data/Memory.hh"
 
 namespace ra {
 namespace data {
@@ -24,6 +24,13 @@ public:
 
 	void Serialize(ra::services::TextWriter&) const override;
     bool Deserialize(ra::Tokenizer&) override;
+
+    struct MemoryRegion
+    {
+        std::wstring sLabel;
+        ra::data::ByteAddress nStartAddress = 0;
+        ra::data::ByteAddress nEndAddress = 0;
+    };
 
     const std::vector<MemoryRegion>& CustomRegions() const noexcept { return m_vRegions; }
 

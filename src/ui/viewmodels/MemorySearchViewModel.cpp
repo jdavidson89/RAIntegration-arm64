@@ -1,7 +1,6 @@
 #include "MemorySearchViewModel.hh"
 
-#include "context\IConsoleContext.hh"
-
+#include "data\context\ConsoleContext.hh"
 #include "data\context\EmulatorContext.hh"
 
 #include "services\IClock.hh"
@@ -107,11 +106,11 @@ void MemorySearchViewModel::SearchResultViewModel::UpdateCodeNote(const std::wst
     {
         bHasCodeNote = false;
 
-        const auto& pConsoleContext = ra::services::ServiceLocator::Get<ra::context::IConsoleContext>();
+        const auto& pConsoleContext = ra::services::ServiceLocator::Get<ra::data::context::ConsoleContext>();
         const auto* pRegion = pConsoleContext.GetMemoryRegion(nAddress);
         if (pRegion)
         {
-            SetDescription(pRegion->GetDescription());
+            SetDescription(ra::Widen(pRegion->Description));
             SetDescriptionColor(ra::ui::Color(0xFFA0A0A0));
         }
         else
@@ -208,56 +207,59 @@ void MemorySearchViewModel::RebuildPredefinedFilterRanges()
     ra::data::ByteAddress nSystemRamEnd = 0U;
     ra::data::ByteAddress nAllRamEnd = 0U;
 
-    std::vector<ra::data::MemoryRegion> vmRanges;
-    auto nPreviousAddressType = ra::data::MemoryRegion::Type::Unused;
+    std::vector<ra::data::context::ConsoleContext::MemoryRegion> vmRanges;
+    auto nPreviousAddressType = ra::data::context::ConsoleContext::AddressType::Unused;
 
-    for (const auto& pRegion : ra::services::ServiceLocator::Get<ra::context::IConsoleContext>().MemoryRegions())
+    for (const auto& pRegion : ra::services::ServiceLocator::Get<ra::data::context::ConsoleContext>().MemoryRegions())
     {
-        nAllRamEnd = pRegion.GetEndAddress();
+        nAllRamEnd = pRegion.EndAddress;
 
-        switch (pRegion.GetType())
+        switch (pRegion.Type)
         {
-            case ra::data::MemoryRegion::Type::Unused:
-            case ra::data::MemoryRegion::Type::VirtualRAM:
-            case ra::data::MemoryRegion::Type::ReadOnlyMemory:
-            case ra::data::MemoryRegion::Type::HardwareController:
-            case ra::data::MemoryRegion::Type::VideoRAM:
+            case ra::data::context::ConsoleContext::AddressType::Unused:
+            case ra::data::context::ConsoleContext::AddressType::VirtualRAM:
+            case ra::data::context::ConsoleContext::AddressType::ReadOnlyMemory:
+            case ra::data::context::ConsoleContext::AddressType::HardwareController:
+            case ra::data::context::ConsoleContext::AddressType::VideoRAM:
                 // don't create filter regions for these.
                 // reset the previous type to ensure the next block doesn't get merged to the last one.
-                nPreviousAddressType = ra::data::MemoryRegion::Type::Unused;
+                nPreviousAddressType = ra::data::context::ConsoleContext::AddressType::Unused;
                 continue;
 
-            case ra::data::MemoryRegion::Type::SystemRAM:
+            case ra::data::context::ConsoleContext::AddressType::SystemRAM:
                 if (nSystemRamEnd == 0)
-                    nSystemRamStart = pRegion.GetStartAddress();
-                nSystemRamEnd = pRegion.GetEndAddress();
+                    nSystemRamStart = pRegion.StartAddress;
+                nSystemRamEnd = pRegion.EndAddress;
                 break;
 
-            case ra::data::MemoryRegion::Type::SaveRAM:
+            case ra::data::context::ConsoleContext::AddressType::SaveRAM:
                 if (nExtraRamEnd == 0)
-                    nExtraRamStart = pRegion.GetStartAddress();
-                nExtraRamEnd = pRegion.GetEndAddress();
+                    nExtraRamStart = pRegion.StartAddress;
+                nExtraRamEnd = pRegion.EndAddress;
                 break;
         }
 
-        if (pRegion.GetType() == nPreviousAddressType && vmRanges.back().GetDescription() == pRegion.GetDescription())
+        if (pRegion.Type == nPreviousAddressType && vmRanges.back().Description == pRegion.Description)
         {
-            vmRanges.back().SetEndAddress(pRegion.GetEndAddress());
+            vmRanges.back().EndAddress = pRegion.EndAddress;
             continue;
         }
 
-        nPreviousAddressType = pRegion.GetType();
-        vmRanges.emplace_back(pRegion.GetStartAddress(), pRegion.GetEndAddress(), pRegion.GetDescription());
+        nPreviousAddressType = pRegion.Type;
+        auto& vmRange = vmRanges.emplace_back();
+        vmRange.Description = pRegion.Description;
+        vmRange.StartAddress = pRegion.StartAddress;
+        vmRange.EndAddress = pRegion.EndAddress;
     }
 
     for (const auto& vmRange : vmRanges)
     {
-        if (vmRange.GetEndAddress() == nSystemRamEnd && vmRange.GetStartAddress() == nSystemRamStart)
+        if (vmRange.EndAddress == nSystemRamEnd && vmRange.StartAddress == nSystemRamStart)
         {
             // system defined range already exists for "All System RAM"
             nSystemRamEnd = 0U;
         }
-        else if (vmRange.GetEndAddress() == nExtraRamEnd && vmRange.GetStartAddress() == nExtraRamStart)
+        else if (vmRange.EndAddress == nExtraRamEnd && vmRange.StartAddress == nExtraRamStart)
         {
             // system defined range already exists for "All Game RAM"
             nExtraRamEnd = 0U;
@@ -270,8 +272,8 @@ void MemorySearchViewModel::RebuildPredefinedFilterRanges()
     DefinePredefinedFilterRange(nIndex++, MEMORY_RANGE_ALL, L"All", 0U, nAllRamEnd, false);
 
     if (vmRanges.size() == 1 &&
-        vmRanges.front().GetEndAddress() == nAllRamEnd &&
-        vmRanges.front().GetStartAddress() == 0)
+        vmRanges.front().EndAddress == nAllRamEnd &&
+        vmRanges.front().StartAddress == 0)
     {
         // single defined range is "All Memory". don't list it separately.
     }
@@ -286,7 +288,7 @@ void MemorySearchViewModel::RebuildPredefinedFilterRanges()
         for (const auto& vmRange : vmRanges)
         {
             DefinePredefinedFilterRange(nIndex, gsl::narrow_cast<int>(nIndex),
-                vmRange.GetDescription(), vmRange.GetStartAddress(), vmRange.GetEndAddress(), true);
+                ra::Widen(vmRange.Description), vmRange.StartAddress, vmRange.EndAddress, true);
             ++nIndex;
         }
     }
@@ -298,7 +300,7 @@ void MemorySearchViewModel::RebuildPredefinedFilterRanges()
         for (const auto& pRegion : pMemoryRegions->CustomRegions())
         {
             DefinePredefinedFilterRange(nIndex, gsl::narrow_cast<int>(nIndex),
-                pRegion.GetDescription(), pRegion.GetStartAddress(), pRegion.GetEndAddress(), true);
+                pRegion.sLabel, pRegion.nStartAddress, pRegion.nEndAddress, true);
             ++nIndex;
         }
     }

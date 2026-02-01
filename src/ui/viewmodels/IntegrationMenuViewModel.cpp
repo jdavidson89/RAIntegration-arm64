@@ -3,8 +3,7 @@
 #include "util\Log.hh"
 #include "RA_Resource.h"
 
-#include "context\IConsoleContext.hh"
-
+#include "data/context/ConsoleContext.hh"
 #include "data/context/GameContext.hh"
 #include "data/context/UserContext.hh"
 
@@ -392,7 +391,7 @@ void IntegrationMenuViewModel::ShowGameHash()
 
         auto sEstimatedGameTitle = ra::services::ServiceLocator::Get<ra::data::context::EmulatorContext>().GetGameTitle();
         vmUnknownGame.SetEstimatedGameName(ra::Widen(sEstimatedGameTitle));
-        vmUnknownGame.SetSystemName(ra::services::ServiceLocator::Get<ra::context::IConsoleContext>().Name());
+        vmUnknownGame.SetSystemName(ra::services::ServiceLocator::Get<ra::data::context::ConsoleContext>().Name());
 
         if (vmUnknownGame.ShowModal() == ra::ui::DialogResult::OK)
         {
@@ -406,7 +405,7 @@ void IntegrationMenuViewModel::ShowGameHash()
     {
         if (pGameContext.GameId() == 0 && !pGameContext.GameHash().empty())
         {
-            const auto& pConsoleContext = ra::services::ServiceLocator::Get<ra::context::IConsoleContext>();
+            const auto& pConsoleContext = ra::services::ServiceLocator::Get<ra::data::context::ConsoleContext>();
             const auto nConsoleId = pConsoleContext.Id();
             if (nConsoleId != ConsoleID::UnknownConsoleID)
             {

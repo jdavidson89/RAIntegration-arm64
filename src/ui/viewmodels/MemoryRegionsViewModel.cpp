@@ -3,7 +3,7 @@
 #include "RA_Defs.h"
 #include "util\Strings.hh"
 
-#include "context\IConsoleContext.hh"
+#include "data\context\ConsoleContext.hh"
 
 #include "services\IConfiguration.hh"
 #include "services\ServiceLocator.hh"
@@ -148,24 +148,24 @@ void MemoryRegionsViewModel::RemoveRegion()
 
 void MemoryRegionsViewModel::InitializeRegions()
 {
-    for (const auto& pRegion : ra::services::ServiceLocator::Get<ra::context::IConsoleContext>().MemoryRegions())
+    for (const auto& pRegion : ra::services::ServiceLocator::Get<ra::data::context::ConsoleContext>().MemoryRegions())
     {
-        switch (pRegion.GetType())
+        switch (pRegion.Type)
         {
-            case ra::data::MemoryRegion::Type::Unused:
-            case ra::data::MemoryRegion::Type::VirtualRAM:
-            case ra::data::MemoryRegion::Type::ReadOnlyMemory:
-            case ra::data::MemoryRegion::Type::HardwareController:
-            case ra::data::MemoryRegion::Type::VideoRAM:
+            case ra::data::context::ConsoleContext::AddressType::Unused:
+            case ra::data::context::ConsoleContext::AddressType::VirtualRAM:
+            case ra::data::context::ConsoleContext::AddressType::ReadOnlyMemory:
+            case ra::data::context::ConsoleContext::AddressType::HardwareController:
+            case ra::data::context::ConsoleContext::AddressType::VideoRAM:
                 continue;
         }
 
         auto pItem = std::make_unique<MemoryRegionViewModel>();
         pItem->SetId(gsl::narrow_cast<int>(m_vRegions.Count()));
-        pItem->SetLabel(ra::Widen(pRegion.GetDescription()));
+        pItem->SetLabel(ra::Widen(pRegion.Description));
         pItem->SetRange(ra::StringPrintf(L"%s-%s",
-            ra::ByteAddressToString(pRegion.GetStartAddress()),
-            ra::ByteAddressToString(pRegion.GetEndAddress())));
+            ra::ByteAddressToString(pRegion.StartAddress),
+            ra::ByteAddressToString(pRegion.EndAddress)));
 
         m_vRegions.Append(std::move(pItem));
     }
@@ -177,10 +177,10 @@ void MemoryRegionsViewModel::InitializeRegions()
         {
             auto pItem = std::make_unique<MemoryRegionViewModel>();
             pItem->SetId(gsl::narrow_cast<int>(m_vRegions.Count()));
-            pItem->SetLabel(pRegion.GetDescription());
+            pItem->SetLabel(ra::Widen(pRegion.sLabel));
             pItem->SetRange(ra::StringPrintf(L"%s-%s",
-                ra::ByteAddressToString(pRegion.GetStartAddress()),
-                ra::ByteAddressToString(pRegion.GetEndAddress())));
+                ra::ByteAddressToString(pRegion.nStartAddress),
+                ra::ByteAddressToString(pRegion.nEndAddress)));
             pItem->SetCustom(true);
 
             m_vRegions.Append(std::move(pItem));

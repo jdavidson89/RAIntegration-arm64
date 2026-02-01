@@ -1,7 +1,6 @@
 #include "CodeNoteModel.hh"
 
-#include "context\IConsoleContext.hh"
-
+#include "data\context\ConsoleContext.hh"
 #include "data\context\EmulatorContext.hh"
 
 #include "services\ServiceLocator.hh"
@@ -84,7 +83,7 @@ bool CodeNoteModel::HasNestedPointers() const noexcept
 
 static ra::data::ByteAddress ConvertPointer(ra::data::ByteAddress nAddress)
 {
-    const auto& pConsoleContext = ra::services::ServiceLocator::Get<ra::context::IConsoleContext>();
+    const auto& pConsoleContext = ra::services::ServiceLocator::Get<ra::data::context::ConsoleContext>();
     const auto nConvertedAddress = pConsoleContext.ByteAddressFromRealAddress(nAddress);
     if (nConvertedAddress != 0xFFFFFFFF)
         nAddress = nConvertedAddress;
@@ -581,7 +580,7 @@ void CodeNoteModel::SetNote(const std::wstring& sNote, bool bImpliedPointer)
 
 Memory::Size CodeNoteModel::GetImpliedPointerSize()
 {
-    const auto& pConsoleContext = ra::services::ServiceLocator::Get<ra::context::IConsoleContext>();
+    const auto& pConsoleContext = ra::services::ServiceLocator::Get<ra::data::context::ConsoleContext>();
 
     Memory::Size nSize;
     uint32_t nMask;

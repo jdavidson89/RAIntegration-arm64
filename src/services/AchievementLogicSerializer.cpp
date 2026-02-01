@@ -1,12 +1,11 @@
 #include "AchievementLogicSerializer.hh"
 
 #include "RA_Defs.h"
+#include "util\Strings.hh"
 
-#include "context\IConsoleContext.hh"
+#include "data\context\ConsoleContext.hh"
 
 #include "services\ServiceLocator.hh"
-
-#include "util\Strings.hh"
 
 namespace ra {
 namespace services {
@@ -308,7 +307,7 @@ std::string AchievementLogicSerializer::BuildMemRefChain(const ra::data::models:
     uint32_t nMask = 0xFFFFFFFF;
     uint32_t nOffset = 0;
 
-    const auto& pConsoleContext = ra::services::ServiceLocator::Get<ra::context::IConsoleContext>();
+    const auto& pConsoleContext = ra::services::ServiceLocator::Get<ra::data::context::ConsoleContext>();
     if (!pConsoleContext.GetRealAddressConversion(&nSize, &nMask, &nOffset))
     {
         nSize = pRootNote.GetMemSize();

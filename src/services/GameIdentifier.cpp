@@ -7,8 +7,7 @@
 
 #include "api\ResolveHash.hh"
 
-#include "context\IConsoleContext.hh"
-
+#include "data\context\ConsoleContext.hh"
 #include "data\context\EmulatorContext.hh"
 #include "data\context\GameContext.hh"
 #include "data\context\UserContext.hh"
@@ -33,7 +32,7 @@ unsigned int GameIdentifier::IdentifyGame(const BYTE* pROM, size_t nROMSize)
 {
     m_nPendingMode = ra::data::context::GameContext::Mode::Normal;
 
-    const auto nConsoleId = ra::services::ServiceLocator::Get<ra::context::IConsoleContext>().Id();
+    const auto nConsoleId = ra::services::ServiceLocator::Get<ra::data::context::ConsoleContext>().Id();
     if (nConsoleId == 0)
     {
         ra::ui::viewmodels::MessageBoxViewModel::ShowErrorMessage(L"Cannot identify game for unknown console.");
@@ -129,7 +128,7 @@ unsigned int GameIdentifier::IdentifyHash(const std::string& sHash)
 
                 ra::ui::viewmodels::UnknownGameViewModel vmUnknownGame;
                 vmUnknownGame.InitializeGameTitles();
-                vmUnknownGame.SetSystemName(ra::services::ServiceLocator::Get<ra::context::IConsoleContext>().Name());
+                vmUnknownGame.SetSystemName(ra::services::ServiceLocator::Get<ra::data::context::ConsoleContext>().Name());
                 vmUnknownGame.SetChecksum(ra::Widen(sHash));
                 vmUnknownGame.SetEstimatedGameName(ra::Widen(sEstimatedGameTitle));
                 vmUnknownGame.SetNewGameName(vmUnknownGame.GetEstimatedGameName());

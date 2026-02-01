@@ -146,8 +146,6 @@ void GameAssets::ReloadAssets(const std::vector<ra::data::models::AssetModelBase
         return;
     }
 
-    auto* pMemoryRegions = FindMemoryRegions();
-
     std::vector<ra::data::models::AssetModelBase*> vRemainingAssetsToReload(vAssetsToReload);
     const bool bReloadAll = vAssetsToReload.empty();
     if (bReloadAll)
@@ -182,12 +180,11 @@ void GameAssets::ReloadAssets(const std::vector<ra::data::models::AssetModelBase
                 vRemainingAssetsToReload.push_back(&pAsset);
             }
         }
-
-        // memory regions are only refreshed when reloading all.
-        // to prevent duplicate entries, clear out the existing ones.
-        if (pMemoryRegions)
-            pMemoryRegions->ResetCustomRegions();
     }
+
+    auto* pMemoryRegions = FindMemoryRegions();
+    if (pMemoryRegions)
+        pMemoryRegions->ResetCustomRegions();
 
     std::string sLine;
     pData->GetLine(sLine); // version used to create the file
